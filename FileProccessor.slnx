@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="FileProccessor.Cores/FileProccessor.Cores.csproj" Id="67e87138-108c-4c48-b7de-3cd61cdcda5c" />
+  <Project Path="FileProccessor.Web/FileProccessor.Web.csproj" />
+</Solution>

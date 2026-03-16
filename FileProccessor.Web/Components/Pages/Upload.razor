@@ -1,0 +1,280 @@
+﻿@page "/payshap-upload"
+@rendermode InteractiveServer
+@using FileProccessor.Cores.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using FileProccessor.Cores.Interfaces
+@using FileProccessor.Cores.Models
+@inject IFileProccessorService FileProcessorService
+@inject IJSRuntime JS
+
+<PageTitle>Payshap Statement Converter</PageTitle>
+
+<h3>File Processor</h3>
+
+<div style="margin-bottom: 1rem;">
+    <InputFile OnChange="HandleFileSelected" accept=".csv,.xlsx,.xls" />
+</div>
+
+<div style="margin-bottom: 1rem;">
+    <button @onclick="ProcessFileAsync" disabled="@(_selectedFile is null || _isProcessing)">
+        @(_isProcessing ? "Processing..." : "Process File")
+    </button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(_message))
+{
+    <div style="margin-bottom: 1rem; color:@(_isError ? "red" : "green");">
+        @_message
+    </div>
+}
+
+@if (_result is not null)
+{
+    <div style="margin-bottom: 1.5rem;">
+        <button @onclick="DownloadResultAsync">Download Output File</button>
+    </div>
+
+    <h4>Bank Statement Preview - First 3 Rows</h4>
+
+    @if (_result.Headers.Any() && _result.PreviewRows.Any())
+    {
+        <div style="overflow-x:auto; margin-bottom: 1.5rem;">
+            <table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Row</th>
+                        @for (int i = 0; i < _result.Headers.Count; i++)
+                        {
+                            var headerUpper = (_result.Headers[i] ?? "").ToUpperInvariant();
+                            if (headerUpper == "DEBITS" || headerUpper == "CREDITS" || headerUpper == "DEBIT" || headerUpper == "CREDIT")
+                            {
+                                continue;
+                            }
+
+                            <th>@_result.Headers[i]</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int rowIndex = 0; rowIndex < _result.PreviewRows.Count; rowIndex++)
+                    {
+                        var row = _result.PreviewRows[rowIndex];
+                        <tr>
+                            <td>@(rowIndex + 1)</td>
+
+                            @for (int cellIndex = 0; cellIndex < row.Count; cellIndex++)
+                            {
+                                var headerUpper = cellIndex < _result.Headers.Count
+                                ? (_result.Headers[cellIndex] ?? "").ToUpperInvariant()
+                                : "";
+
+                                if (headerUpper == "DEBITS" || headerUpper == "CREDITS" || headerUpper == "DEBIT" || headerUpper == "CREDIT")
+                                {
+                                    continue;
+                                }
+
+                                <td>@row[cellIndex]</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <h4>Output Preview - First 3 Rows</h4>
+
+    @if (_result.OutputPreview.Any())
+    {
+        <div style="overflow-x:auto; margin-bottom: 1.5rem;">
+            <table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                    <tr>
+                        <th>TXdate</th>
+                        <th>Description</th>
+                        <th>Reference</th>
+                        <th>Amount</th>
+                        <th>UseTax</th>
+                        <th>TaxType</th>
+                        <th>TaxAccount</th>
+                        <th>TaxAmount</th>
+                        <th>Project</th>
+                        <th>Account</th>
+                        <th>IsDebit</th>
+                        <th>SplitType</th>
+                        <th>SplitGroup</th>
+                        <th>Reconcile</th>
+                        <th>PostDated</th>
+                        <th>UseDiscount</th>
+                        <th>DiscPerc</th>
+                        <th>DiscTrCode</th>
+                        <th>DiscDesc</th>
+                        <th>UseDiscTax</th>
+                        <th>DiscTaxType</th>
+                        <th>DiscTaxAcc</th>
+                        <th>DiscTaxAmt</th>
+                        <th>PayeeName</th>
+                        <th>PrintCheque</th>
+                        <th>SalesRep</th>
+                        <th>Module</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _result.OutputPreview)
+                    {
+                        <tr>
+                            <td>@row.TXdate</td>
+                            <td>@row.Description</td>
+                            <td>@row.Reference</td>
+                            <td>@row.Amount</td>
+                            <td>@row.UseTax</td>
+                            <td>@row.TaxType</td>
+                            <td>@row.TaxAccount</td>
+                            <td>@row.TaxAmount</td>
+                            <td>@row.Project</td>
+                            <td>@row.Account</td>
+                            <td>@row.IsDebit</td>
+                            <td>@row.SplitType</td>
+                            <td>@row.SplitGroup</td>
+                            <td>@row.Reconcile</td>
+                            <td>@row.PostDated</td>
+                            <td>@row.UseDiscount</td>
+                            <td>@row.DiscPerc</td>
+                            <td>@row.DiscTrCode</td>
+                            <td>@row.DiscDesc</td>
+                            <td>@row.UseDiscTax</td>
+                            <td>@row.DiscTaxType</td>
+                            <td>@row.DiscTaxAcc</td>
+                            <td>@row.DiscTaxAmt</td>
+                            <td>@row.PayeeName</td>
+                            <td>@row.PrintCheque</td>
+                            <td>@row.SalesRep</td>
+                            <td>@row.Module</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <h4>Reconciliation Check</h4>
+
+    <table border="1" cellpadding="6" style="border-collapse: collapse; margin-bottom: 1rem;">
+        <thead>
+            <tr>
+                <th>Check</th>
+                <th>Bank Statement File</th>
+                <th>Output File</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Number of Records</td>
+                <td>@_result.BankStatementCount</td>
+                <td>@_result.AllOutputRows.Count</td>
+                <td>@(_result.RecordsMatch ? "Match" : "Error")</td>
+            </tr>
+            <tr>
+                <td>Absolute Total Amount</td>
+                <td>@_result.BankStatementTotal.ToString("0.00")</td>
+                <td>@_result.OutputTotal.ToString("0.00")</td>
+                <td>@(_result.TotalsMatch ? "Match" : "Error")</td>
+            </tr>
+        </tbody>
+    </table>
+
+    @if (_result.RecordsMatch && _result.TotalsMatch)
+    {
+        <div style="color: green; margin-bottom: 1rem;">
+            Reconciliation Successful! All records and amounts match.
+        </div>
+    }
+    else
+    {
+        <div style="color: red; margin-bottom: 1rem;">
+            Reconciliation Failed! Please review the discrepancies above.
+        </div>
+    }
+}
+
+@code {
+    private IBrowserFile? _selectedFile;
+    private ResultModel? _result;
+    private string _message = "";
+    private bool _isError;
+    private bool _isProcessing;
+    private IJSObjectReference? _module;
+
+    //private AccountModel? accountModel;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./Components/Pages/Upload.razor.js");
+        }
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+        _result = null;
+        _message = $"Selected: {_selectedFile?.Name}";
+        _isError = false;
+    }
+
+    private async Task ProcessFileAsync()
+    {
+        if (_selectedFile is null)
+        {
+            _message = "Please select a valid file.";
+            _isError = true;
+            return;
+        }
+
+        try
+        {
+            _isProcessing = true;
+            _message = "";
+            _isError = false;
+
+            await using var stream = _selectedFile.OpenReadStream(20 * 1024 * 1024);
+            _result = await FileProcessorService.ProccessFileAsync(stream, _selectedFile.Name);
+
+            
+
+            _message = "File processed successfully.";
+        }
+        catch (Exception ex)
+        {
+            _result = null;
+            _message = $"Error: {ex.GetType().Name}: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private async Task DownloadResultAsync()
+    {
+        if (_result is null || _module is null)
+            return;
+
+        var base64 = Convert.ToBase64String(_result.FileData);
+
+        await _module.InvokeVoidAsync(
+            "downloadFile",
+            _result.FileName,
+            _result.ContentType,
+            base64);
+    }
+
+    // private async Task HandelDateFormatting()
+    // {
+    //     await _module.InvokeVoidAsync("getAccountFromDescription", accountModel.Account, accountModel.Module);
+    // }
+}

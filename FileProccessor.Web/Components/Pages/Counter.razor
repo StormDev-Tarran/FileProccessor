@@ -1,0 +1,283 @@
+﻿@page "/counter"
+@rendermode InteractiveServer
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+
+
+@* @rendermode InteractiveServer
+@using FileProccessor.Cores.Models
+@using FileProccessor.Cores.Services
+
+@using Microsoft.JSInterop
+
+@inject IJSRuntime JS *@
+
+<PageTitle>Bank Statement Converter</PageTitle>
+<h3>Bank Statement Converter</h3>
+
+<body class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Bank Statement Converter</h1>
+            <p class="text-gray-600">Upload your bank statement CSV to convert for ERP import</p>
+        </div>
+
+        <!-- Upload Section -->
+        <div id="uploadSection" class="bg-white rounded-lg shadow-lg p-8">
+            <div class="border-4 border-dashed border-gray-300 rounded-lg p-12 text-center"
+                 id="dropZone">
+                <p class="text-xl font-semibold text-gray-700 mb-4">Drop your CSV here or</p>
+                <input type="file" id="fileInput" accept=".csv" class="hidden" />
+                <button onclick="document.getElementById('fileInput').click()"
+                        class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    Browse Files
+                </button>
+                <p class="text-sm text-gray-400 mt-4">CSV files only</p>
+            </div>
+            <div id="errorMsg" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden space-y-6 mt-6">
+            <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between">
+                <div>
+                    <h3 id="fileName" class="text-lg font-semibold text-gray-800"></h3>
+                    <p class="text-sm text-gray-500">File uploaded successfully</p>
+                </div>
+                <button onclick="clearData()"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    Clear Data
+                </button>
+            </div>
+
+            <!-- Reconciliation -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h4 class="font-semibold text-amber-900 mb-4">Reconciliation Check</h4>
+                <table class="w-full border border-gray-200 rounded-lg text-sm">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Check</th>
+                            <th class="px-4 py-3 text-left">Bank Statement</th>
+                            <th class="px-4 py-3 text-left">Output</th>
+                            <th class="px-4 py-3 text-left">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-t border-gray-200">
+                            <td class="px-4 py-3">Number of Records</td>
+                            <td class="px-4 py-3" id="bankCount">-</td>
+                            <td class="px-4 py-3" id="outputCount">-</td>
+                            <td class="px-4 py-3" id="countStatus">-</td>
+                        </tr>
+                        <tr class="border-t border-gray-200">
+                            <td class="px-4 py-3">Absolute Total Amount</td>
+                            <td class="px-4 py-3" id="bankTotal">-</td>
+                            <td class="px-4 py-3" id="outputTotal">-</td>
+                            <td class="px-4 py-3" id="amountStatus">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Download -->
+            <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+                <button onclick="downloadFile()"
+                        class="inline-flex items-center gap-2 px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg">
+                    ⬇ Download Converted CSV
+                </button>
+                <p id="recordCount" class="text-sm text-gray-600 mt-3"></p>
+            </div>
+        </div>
+    </div>
+    <script>
+            let currentFile = null;
+            let conversionData = null;
+
+            document.getElementById('fileInput').addEventListener('change', e => {
+              const f = e.target.files[0];
+              if (f) handleFile(f);
+            });
+
+            const dropZone = document.getElementById('dropZone');
+            dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-blue-500','bg-blue-50'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-blue-500','bg-blue-50'));
+            dropZone.addEventListener('drop', e => {
+              e.preventDefault();
+              dropZone.classList.remove('border-blue-500','bg-blue-50');
+              if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+            });
+
+            async function handleFile(file) {
+              currentFile = file;
+              const form = new FormData();
+              form.append('file', file);
+
+              const res = await fetch('/api/bankstatement/upload', { method: 'POST', body: form });
+              const data = await res.json();
+
+              if (!res.ok) {
+                document.getElementById('errorMsg').textContent = data.error;
+                document.getElementById('errorMsg').classList.remove('hidden');
+                return;
+              }
+
+              conversionData = data;
+              showResults(file.name, data);
+            }
+
+            function showResults(name, data) {
+              document.getElementById('uploadSection').classList.add('hidden');
+              document.getElementById('resultsSection').classList.remove('hidden');
+              document.getElementById('fileName').textContent = name;
+
+              const outputTotal = data.rows.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
+              const countMatch = data.bankStatementCount === data.rows.length;
+              const amountMatch = Math.abs(data.bankStatementTotal - outputTotal) < 0.01;
+
+              document.getElementById('bankCount').textContent = data.bankStatementCount;
+              document.getElementById('outputCount').textContent = data.rows.length;
+              document.getElementById('bankTotal').textContent = data.bankStatementTotal.toFixed(2);
+              document.getElementById('outputTotal').textContent = outputTotal.toFixed(2);
+              document.getElementById('countStatus').innerHTML = countMatch
+                ? '<span class="text-green-600 font-semibold">✓ Match</span>'
+                : '<span class="text-red-600 font-semibold">✗ Error</span>';
+              document.getElementById('amountStatus').innerHTML = amountMatch
+                ? '<span class="text-green-600 font-semibold">✓ Match</span>'
+                : '<span class="text-red-600 font-semibold">✗ Error</span>';
+              document.getElementById('recordCount').textContent =
+                `Complete converted file with all ${data.rows.length} records`;
+            }
+
+            async function downloadFile() {
+              if (!currentFile) return;
+              const form = new FormData();
+              form.append('file', currentFile);
+              const res = await fetch('/api/bankstatement/download', { method: 'POST', body: form });
+              const blob = await res.blob();
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'bank_statement_converted.csv';
+              a.click();
+            }
+
+            function clearData() {
+              currentFile = null;
+              conversionData = null;
+              document.getElementById('fileInput').value = '';
+              document.getElementById('uploadSection').classList.remove('hidden');
+              document.getElementById('resultsSection').classList.add('hidden');
+              document.getElementById('errorMsg').classList.add('hidden');
+            }
+    </script>
+</body>
+
+
+@* @code {
+    private IBrowserFile? _selectedFile;
+    private ConversionResult? _result;
+    private string _message = "";
+    private bool _isError;
+    private bool _isProcessing;
+    private IJSObjectReference? _module;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./Components/Pages/UploadExpense.razor.js");
+        }
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+        _result = null;
+        _message = $"Selected: {_selectedFile?.Name}";
+        _isError = false;
+    }
+
+    private async Task DownloadResultAsync()
+    {
+        if (_result is null || _module is null)
+            return;
+
+        //var base64 = Convert.ToBase64String(_result.FileData);
+
+        await _module.InvokeVoidAsync(
+            "downloadFile"
+            //_result.FileName,
+            //_result.ContentType,
+            //base64
+        );
+    }
+
+    private async Task ClearFileAsync()
+    {
+        if (_result is null || _module is null)
+            return;
+
+        //var base64 = Convert.ToBase64String(_result.FileData);
+
+        await _module.InvokeVoidAsync(
+            "clearData"
+        //_result.FileName,
+        //_result.ContentType,
+        //base64
+        );
+    }
+
+    private async Task PrcoessFileAsync()
+    {
+        if (_result is null || _module is null)
+            return;
+
+        //var base64 = Convert.ToBase64String(_result.FileData);
+
+        await _module.InvokeVoidAsync(
+            "processFile"
+        //_result.FileName,
+        //_result.ContentType,
+        //base64
+        );
+    } 
+
+
+
+    // private void ProcessFileAsync()
+    // {
+    //     if (_selectedFile is null)
+    //     {
+    //         _message = "Please select a valid file.";
+    //         _isError = true;
+    //         return;
+    //     }
+
+    //     try
+    //     {
+    //         _isProcessing = true;
+    //         _message = "";
+    //         _isError = false;
+
+    //         using var stream = _selectedFile.OpenReadStream(20 * 1024 * 1024);
+    //         _result = BankStatementService.Process(stream);
+
+            
+
+    //         _message = "File processed successfully.";
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         _result = null;
+    //         _message = $"Error: {ex.GetType().Name}: {ex.Message}";
+    //         _isError = true;
+    //     }
+    //     finally
+    //     {
+    //         _isProcessing = false;
+    //     }
+    // }
+}*@

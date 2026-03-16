@@ -1,0 +1,20 @@
+﻿@{
+    ViewData["Title"] = "File Processor";
+}
+
+<h2>File Processor</h2>
+
+@if (ViewBag.Error != null)
+{
+    <div style="color:red; margin-bottom:15px;">
+        @ViewBag.Error
+    </div>
+}
+
+<form asp-controller="FileProcessor" asp-action="Process" method="post" enctype="multipart/form-data">
+    <div style="margin-bottom:15px;">
+        <input type="file" name="file" accept=".csv,.xlsx,.xls" />
+    </div>
+
+    <button type="submit">Process File</button>
+</form>
