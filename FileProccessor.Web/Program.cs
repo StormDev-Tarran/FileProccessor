@@ -1,3 +1,6 @@
+using Blazorise;
+using Blazorise.Bootstrap;
+using Blazorise.Icons.FontAwesome;
 using FileProccessor.Cores.Interfaces;
 using FileProccessor.Cores.Services;
 using FileProccessor.Web.Components;
@@ -10,10 +13,17 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<IFileProccessorService, FileProccessorService>();
-builder.Services.AddScoped<Home>();
+builder.Services.AddScoped<IBankStatementService, BankStatementService>();
+
+//builder.Services
+//    .AddBlazorise(options =>
+//    {
+//        options.Immediate = true;
+//    })
+//    .AddBootstrapProviders() // This registers the IClassProvider implementation
+//    .AddFontAwesomeIcons();
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<BankStatementService>();
 
 var app = builder.Build();
 
@@ -32,5 +42,7 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapControllers();
 
 app.Run();

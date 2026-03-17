@@ -9,31 +9,58 @@
 @inject IJSRuntime JS
 
 <PageTitle>Payshap Statement Converter</PageTitle>
-
-<h3>File Processor</h3>
-
-<div style="margin-bottom: 1rem;">
-    <InputFile OnChange="HandleFileSelected" accept=".csv,.xlsx,.xls" />
-</div>
-
-<div style="margin-bottom: 1rem;">
-    <button @onclick="ProcessFileAsync" disabled="@(_selectedFile is null || _isProcessing)">
-        @(_isProcessing ? "Processing..." : "Process File")
-    </button>
-</div>
-
-@if (!string.IsNullOrWhiteSpace(_message))
+@if (_result is null)
 {
-    <div style="margin-bottom: 1rem; color:@(_isError ? "red" : "green");">
-        @_message
+    
+    <div class="text-center mb-8">
+        @* <div style="margin-bottom: 1rem; " class="text-end mb-8 btn-danger">
+            <button @onclick="ClearData">Clear</button>
+        </div> *@
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">File Processor</h1>
+        <p class="text-gray-600">Upload your payshap document to convert</p>
+        <div style="margin-bottom: 1rem;">
+            <InputFile OnChange="HandleFileSelected" accept=".csv,.xlsx,.xls" />
+            <button @onclick="ProcessFileAsync" disabled="@(_selectedFile is null || _isProcessing)">
+                @(_isProcessing ? "Processing..." : "Process File")
+            </button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_message))
+        {
+            <div style="margin-bottom: 1rem; color:@(_isError ? "red" : "green");">
+                @_message
+            </div>
+        }
     </div>
 }
 
+
 @if (_result is not null)
 {
-    <div style="margin-bottom: 1.5rem;">
-        <button @onclick="DownloadResultAsync">Download Output File</button>
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">File Processor</h1>
+        <p class="text-gray-600">Upload your payshap document to convert</p>
+        <div style="margin-bottom: 1rem;">
+            <InputFile OnChange="HandleFileSelected" accept=".csv,.xlsx,.xls" />
+            <button @onclick="ProcessFileAsync" disabled="@(_selectedFile is null || _isProcessing)">
+                @(_isProcessing ? "Processing..." : "Process File")
+            </button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_message))
+        {
+            <div style="margin-bottom: 1rem; color:@(_isError ? "red" : "green");">
+                @_message
+            </div>
+        }
     </div>
+    <div style="margin-bottom: 1rem; ">
+        <button @onclick="DownloadResultAsync">Download Output File</button>
+        <button @onclick="ClearData">Clear</button>
+    </div>
+    @* <div style="margin-bottom: 1.5rem;">
+        <button @onclick="DownloadResultAsync">Download Output File</button>
+    </div> *@
 
     <h4>Bank Statement Preview - First 3 Rows</h4>
 
@@ -85,7 +112,7 @@
 
     <h4>Output Preview - First 3 Rows</h4>
 
-    @if (_result.OutputPreview.Any())
+    @* @if (_result.OutputPreview.Any())
     {
         <div style="overflow-x:auto; margin-bottom: 1.5rem;">
             <table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
@@ -155,6 +182,103 @@
                     }
                 </tbody>
             </table>
+        </div>
+    } *@
+
+    @if (_result.OutputPreview.Any())
+    {
+        <div style="margin-bottom: 2rem;">
+            <!-- Part 1 -->
+            <h4 style="margin-bottom: 0.5rem;">Transaction Basics</h4>
+            <div style="overflow-x: auto; margin-bottom: 1.5rem;">
+                <table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>TXdate</th>
+                            <th>Description</th>
+                            <th>Reference</th>
+                            <th>Amount</th>
+                            <th>UseTax</th>
+                            <th>TaxType</th>
+                            <th>TaxAccount</th>
+                            <th>TaxAmount</th>
+                            <th>Project</th>
+                            <th>Account</th>
+                            <th>IsDebit</th>
+                            <th>SplitType</th>
+                            <th>SplitGroup</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _result.OutputPreview)
+                        {
+                            <tr>
+                                <td>@row.TXdate</td>
+                                <td>@row.Description</td>
+                                <td>@row.Reference</td>
+                                <td>@row.Amount</td>
+                                <td>@row.UseTax</td>
+                                <td>@row.TaxType</td>
+                                <td>@row.TaxAccount</td>
+                                <td>@row.TaxAmount</td>
+                                <td>@row.Project</td>
+                                <td>@row.Account</td>
+                                <td>@row.IsDebit</td>
+                                <td>@row.SplitType</td>
+                                <td>@row.SplitGroup</td>
+                                
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Part 2 -->
+            <h4 style="margin: 2rem 0 0.5rem 0;">Discounts, Payee & Other</h4>
+            <div style="overflow-x: auto;">
+                <table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Reconcile</th>
+                            <th>PostDated</th>
+                            <th>UseDiscount</th>
+                            <th>DiscPerc</th>
+                            <th>DiscTrCode</th>
+                            <th>DiscDesc</th>
+                            <th>UseDiscTax</th>
+                            <th>DiscTaxType</th>
+                            <th>DiscTaxAcc</th>
+                            <th>DiscTaxAmt</th>
+                            <th>PayeeName</th>
+                            <th>PrintCheque</th>
+                            <th>SalesRep</th>
+                            <th>Module</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _result.OutputPreview)
+                        {
+                            <tr>
+                                
+                                <td>@row.Reconcile</td>
+                                <td>@row.PostDated</td>
+                                <td>@row.UseDiscount</td>
+                                <td>@row.DiscPerc</td>
+                                <td>@row.DiscTrCode</td>
+                                <td>@row.DiscDesc</td>
+                                <td>@row.UseDiscTax</td>
+                                <td>@row.DiscTaxType</td>
+                                <td>@row.DiscTaxAcc</td>
+                                <td>@row.DiscTaxAmt</td>
+                                <td>@row.PayeeName</td>
+                                <td>@row.PrintCheque</td>
+                                <td>@row.SalesRep</td>
+                                <td>@row.Module</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     }
     <h4>Reconciliation Check</h4>
@@ -272,9 +396,13 @@
             _result.ContentType,
             base64);
     }
+    private void ClearData()
+    {
+        _selectedFile = null;
+        _result = null;
+        _message = "";
+        _isError = false;
+        _isProcessing = false;
 
-    // private async Task HandelDateFormatting()
-    // {
-    //     await _module.InvokeVoidAsync("getAccountFromDescription", accountModel.Account, accountModel.Module);
-    // }
+    }
 }

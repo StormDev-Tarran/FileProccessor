@@ -1,0 +1,207 @@
+﻿body {
+
+    .bank-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f4f7fb 0%, #eaf1ff 100%);
+        padding: 32px 20px;
+    }
+
+    .bank-container {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .bank-header {
+        text-align: center;
+        margin-bottom: 28px;
+    }
+
+        .bank-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .bank-header p {
+            margin: 0;
+            font-size: 1rem;
+            color: #6b7280;
+        }
+
+    .bank-card {
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        border: 1px solid #e5e7eb;
+        padding: 24px;
+        margin-bottom: 22px;
+    }
+
+    .upload-card {
+        padding: 28px;
+    }
+
+    .drop-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 16px;
+        padding: 40px 24px;
+        text-align: center;
+        background: #f8fbff;
+        transition: 0.2s ease;
+    }
+
+        .drop-zone:hover {
+            border-color: #2563eb;
+            background: #f0f7ff;
+        }
+
+    .drop-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 16px;
+    }
+
+    .file-help {
+        margin-top: 14px;
+        color: #9ca3af;
+        font-size: 0.95rem;
+    }
+
+    .file-input-hidden {
+        display: none;
+    }
+
+    .primary-btn,
+    .danger-btn,
+    .success-btn {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 22px;
+        font-size: 0.98rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s ease;
+    }
+
+    .primary-btn {
+        background: #2563eb;
+        color: white;
+    }
+
+        .primary-btn:hover {
+            background: #1d4ed8;
+        }
+
+    .danger-btn {
+        background: #dc2626;
+        color: white;
+    }
+
+        .danger-btn:hover {
+            background: #b91c1c;
+        }
+
+    .success-btn {
+        background: #16a34a;
+        color: white;
+    }
+
+        .success-btn:hover {
+            background: #15803d;
+        }
+
+        .primary-btn:disabled,
+        .danger-btn:disabled,
+        .success-btn:disabled {
+            background: #cbd5e1;
+            color: #f8fafc;
+            cursor: not-allowed;
+        }
+
+    .error-box {
+        margin-top: 16px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+
+    .results-section {
+        margin-top: 16px;
+    }
+
+    .result-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .file-name {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .success-text {
+        margin: 6px 0 0 0;
+        color: #6b7280;
+        font-size: 0.95rem;
+    }
+
+    .section-title {
+        margin: 0 0 18px 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .recon-table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border-radius: 14px;
+    }
+
+        .recon-table thead {
+            background: #eff6ff;
+        }
+
+        .recon-table th {
+            text-align: left;
+            padding: 14px 16px;
+            font-size: 0.96rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            border-bottom: 1px solid #dbeafe;
+        }
+
+        .recon-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+            font-size: 0.96rem;
+        }
+
+        .recon-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+    .download-card {
+        text-align: center;
+    }
+
+    .record-count {
+        margin-top: 14px;
+        color: #6b7280;
+        font-size: 0.95rem;
+    }
+}
