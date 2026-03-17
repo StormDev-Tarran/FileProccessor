@@ -133,4 +133,10 @@ function clearData() {
     document.getElementById("resultsSection").classList.add("hidden");
     document.getElementById("errorMsg").classList.add("hidden");
     document.getElementById("errorMsg").textContent = "";
+    document.getElementById("bankCount").textContent = "";
+    document.getElementById("outputCount").textContent = "";
+    document.getElementById("countStatus").textContent = "";
+    document.getElementById("bankTotal").textContent = "";
+    document.getElementById("outputTotal").textContent = "";
+    document.getElementById("amountStatus").textContent = "";
 }
