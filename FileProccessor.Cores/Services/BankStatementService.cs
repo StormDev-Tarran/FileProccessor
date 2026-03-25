@@ -93,11 +93,11 @@ namespace FileProccessor.Cores.Services
         {
             var cols = new[]
             {
-        "TXdate", "Description", "Reference", "Amount", "UseTax", "TaxType", "TaxAccount",
-        "TaxAmount", "Project", "Account", "IsDebit", "SplitType", "SplitGroup", "Reconcile",
-        "PostDated", "UseDiscount", "DiscPerc", "DiscTrCode", "DiscDesc", "UseDiscTax",
-        "DiscTaxType", "DiscTaxAcc", "DiscTaxAmt", "PayeeName", "PrintCheque", "SalesRep", "Module"
-    };
+                "TXdate", "Description", "Reference", "Amount", "UseTax", "TaxType", "TaxAccount",
+                "TaxAmount", "Project", "Account", "IsDebit", "SplitType", "SplitGroup", "Reconcile",
+                "PostDated", "UseDiscount", "DiscPerc", "DiscTrCode", "DiscDesc", "UseDiscTax",
+                "DiscTaxType", "DiscTaxAcc", "DiscTaxAmt", "PayeeName", "PrintCheque", "SalesRep", "Module"
+            };
 
             var sb = new StringBuilder();
             sb.AppendLine(string.Join(",", cols));
@@ -106,13 +106,13 @@ namespace FileProccessor.Cores.Services
             {
                 var vals = new[]
                 {
-            row.TXdate, row.Description, row.Reference, row.Amount, row.UseTax,
-            row.TaxType, row.TaxAccount, row.TaxAmount, row.Project, row.Account,
-            row.IsDebit, row.SplitType, row.SplitGroup, row.Reconcile, row.PostDated,
-            row.UseDiscount, row.DiscPerc, row.DiscTrCode, row.DiscDesc, row.UseDiscTax,
-            row.DiscTaxType, row.DiscTaxAcc, row.DiscTaxAmt, row.PayeeName,
-            row.PrintCheque, row.SalesRep, row.Module
-        };
+                    row.TXdate, row.Description, row.Reference, row.Amount, row.UseTax,
+                    row.TaxType, row.TaxAccount, row.TaxAmount, row.Project, row.Account,
+                    row.IsDebit, row.SplitType, row.SplitGroup, row.Reconcile, row.PostDated,
+                    row.UseDiscount, row.DiscPerc, row.DiscTrCode, row.DiscDesc, row.UseDiscTax,
+                    row.DiscTaxType, row.DiscTaxAcc, row.DiscTaxAmt, row.PayeeName,
+                    row.PrintCheque, row.SalesRep, row.Module
+                };
 
                 sb.AppendLine(string.Join(",", vals.Select(v => $"\"{(v ?? "").Replace("\"", "\"\"")}\"")));
             }

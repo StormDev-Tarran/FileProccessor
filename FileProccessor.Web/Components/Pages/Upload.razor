@@ -1,5 +1,6 @@
 ﻿@page "/payshap-upload"
 @rendermode InteractiveServer
+@using Blazorise
 @using FileProccessor.Cores.Services
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
@@ -13,9 +14,6 @@
 {
     
     <div class="text-center mb-8">
-        @* <div style="margin-bottom: 1rem; " class="text-end mb-8 btn-danger">
-            <button @onclick="ClearData">Clear</button>
-        </div> *@
         <h1 class="text-3xl font-bold text-gray-800 mb-2">File Processor</h1>
         <p class="text-gray-600">Upload your payshap document to convert</p>
         <div style="margin-bottom: 1rem;">
@@ -37,6 +35,216 @@
 
 @if (_result is not null)
 {
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">SB Payshap</h1>
+                <p class="text-gray-600">Upload your bank statement to convert for ERP import</p>
+            </div>
+
+            {!file ? (
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+                     className={`border-4 border-dashed rounded-lg p-12 text-center transition-colors ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50' }`}>
+                    <Upload className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">Drop your bank statement here</h3>
+                    <p className="text-gray-500 mb-4">or</p>
+                    <label className="inline-block">
+                        <input type="file" accept=".csv,.xlsx,.xls" onChange={handleFileInput} className="hidden" />
+                        <span className="bg-blue-600 text-white px-6 py-3 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors inline-block">Browse Files</span>
+                    </label>
+                    <p className="text-sm text-gray-400 mt-4">Supports CSV and Excel files (.csv, .xlsx, .xls)</p>
+                </div>
+                {error && <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>}
+            </div>
+            ) : (
+            <div className="space-y-6">
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <FileText className="w-8 h-8 text-green-600" />
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-800">{file.name}</h3>
+                                <p className="text-sm text-gray-500">File uploaded successfully</p>
+                            </div>
+                        </div>
+                        <button onClick={clearFile} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            <X className="w-4 h-4" />Clear Data
+                        </button>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 className="font-semibold text-blue-900 mb-2">Bank Statement Preview - First 3 Rows (Column 7 ≠ 0)</h4>
+                        <p className="text-sm text-blue-700">Original bank statement data (rows where Column 7 = 0 are excluded)</p>
+                    </div>
+                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-gray-100 border-b border-gray-300">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Row</th>
+                                    {headers.map((header, idx) => {
+                                    const headerUpper = String(header || '').toUpperCase();
+                                    if (headerUpper === 'DEBITS' || headerUpper === 'CREDITS' || headerUpper === 'DEBIT' || headerUpper === 'CREDIT') return null;
+                                    return
+                                    <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{header || `Column ${idx + 1}`}</th>;
+                                    })}
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white">
+                                {previewRows.map((row, rowIdx) => (
+                                <tr key={rowIdx} className="border-b border-gray-200 hover:bg-gray-50">
+                                    <td className="px-4 py-3 text-sm font-medium text-gray-500">{rowIdx + 1}</td>
+                                    {row.map((cell, cellIdx) => {
+                                    const headerUpper = String(headers[cellIdx] || '').toUpperCase();
+                                    if (headerUpper === 'DEBITS' || headerUpper === 'CREDITS' || headerUpper === 'DEBIT' || headerUpper === 'CREDIT') return null;
+                                    // Convert Excel date numbers in first column (Statement Date)
+                                    let displayCell = cell;
+                                    if (cellIdx === 0) {
+                                    displayCell = formatDate(cell);
+                                    }
+                                    return
+                                    <td key={cellIdx} className="px-4 py-3 text-sm text-gray-700">{displayCell}</td>;
+                                    })}
+                                </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                            <Download className="w-5 h-5" />Output File Preview - First 3 Rows (All 27 Columns)
+                        </h4>
+                        <p className="text-sm text-green-700">Converted data ready for ERP import - scroll horizontally to see all columns</p>
+                    </div>
+                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table className="w-full text-xs">
+                            <thead>
+                                <tr className="bg-green-100 border-b border-green-300">
+                                    {['TXdate','Description','Reference','Amount','UseTax','TaxType','TaxAccount','TaxAmount','Project','Account','IsDebit','SplitType','SplitGroup','Reconcile','PostDated','UseDiscount','DiscPerc','DiscTrCode','DiscDesc','UseDiscTax','DiscTaxType','DiscTaxAcc','DiscTaxAmt','PayeeName','PrintCheque','SalesRep','Module'].map(h => (
+                                    <th key={h} className="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white">
+                                {outputPreview.map((row, rowIdx) => (
+                                <tr key={rowIdx} className="border-b border-gray-200 hover:bg-gray-50">
+                                    <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{row.TXdate}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.Description}</td>
+                                    <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{row.Reference}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-right">{row.Amount}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-center">{row.UseTax}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.TaxType}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.TaxAccount}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-right">{row.TaxAmount}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.Project}</td>
+                                    <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{row.Account}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-center">{row.IsDebit}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-center">{row.SplitType}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-center">{row.SplitGroup}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-center">{row.Reconcile}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-center">{row.PostDated}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-center">{row.UseDiscount}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-right">{row.DiscPerc}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.DiscTrCode}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.DiscDesc}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-center">{row.UseDiscTax}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.DiscTaxType}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.DiscTaxAcc}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-right">{row.DiscTaxAmt}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.PayeeName}</td>
+                                    <td className="px-2 py-2 text-gray-700 text-center">{row.PrintCheque}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.SalesRep}</td>
+                                    <td className="px-2 py-2 text-gray-700">{row.Module}</td>
+                                </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                    <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <h4 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+                            Reconciliation Check
+                            @* <AlertCircle className="w-5 h-5" />Reconciliation Check *@
+                            
+                        </h4>
+                        <p className="text-sm text-amber-800">
+                            <strong>Note:</strong> "Absolute Total Amount" means all amounts are treated as positive values.
+                        </p>
+                    </div>
+                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-gray-100 border-b border-gray-300">
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Check</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Bank Statement File</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Output File</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white">
+                                <tr className="border-b border-gray-200">
+                                    <td className="px-4 py-3 text-sm font-medium text-gray-700">Number of Records</td>
+                                    <td className="px-4 py-3 text-sm text-gray-800">@_result.BankStatementCount</td>
+                                    <td className="px-4 py-3 text-sm text-gray-800">@_result.AllOutputRows.Count</td>
+                                    <td className="px-4 py-3 text-sm">
+                                        @(_result.RecordsMatch ? "Match" : "Error")
+                                        @* {recordsMatch ? (
+                                        <span className="flex items-center gap-1 text-green-600 font-semibold"><CheckCircle className="w-4 h-4" />Match</span>
+                                        ) : (
+                                        <span className="flex items-center gap-1 text-red-600 font-semibold"><AlertCircle className="w-4 h-4" />Error</span>
+                                        )} *@
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-gray-200">
+                                    <td className="px-4 py-3 text-sm font-medium text-gray-700">Absolute Total Amount</td>
+                                    <td className="px-4 py-3 text-sm text-gray-800"> @*{bankStatementTotal.toFixed(2)}*@ @_result.BankStatementTotal.ToString("0.00")</td>
+                                    <td className="px-4 py-3 text-sm text-gray-800">@*{outputTotal.toFixed(2)}*@ @_result.OutputTotal.ToString("0.00")</td>
+                                    <td className="px-4 py-3 text-sm">
+                                        @(_result.TotalsMatch ? "Match" : "Error")
+                                        @* {totalsMatch ? (
+                                        <span className="flex items-center gap-1 text-green-600 font-semibold"><CheckCircle className="w-4 h-4" />Match</span>
+                                        ) : (
+                                        <span className="flex items-center gap-1 text-red-600 font-semibold"><AlertCircle className="w-4 h-4" />Error</span>
+                                        )} *@
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {recordsMatch && totalsMatch ? (
+                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-green-800 font-medium flex items-center gap-2"><CheckCircle className="w-5 h-5" />Reconciliation Successful! All records and amounts match.</p>
+                    </div>
+                    ) : (
+                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-red-800 font-medium flex items-center gap-2"><AlertCircle className="w-5 h-5" />Reconciliation Failed! Please review the discrepancies above.</p>
+                    </div>
+                    )}
+                </div>
+
+                <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+                    <button onClick={downloadCSV} className="inline-flex items-center gap-2 px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg">
+                        <Download className="w-6 h-6" />Download CSV Output File
+                    </button>
+                    <p className="text-sm text-gray-600 mt-3">Click to download the complete converted file with all {allOutputRows.length} records</p>
+                </div>
+            </div>
+            )}
+        </div>
+    </div>
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-2">File Processor</h1>
         <p class="text-gray-600">Upload your payshap document to convert</p>
@@ -58,9 +266,6 @@
         <button @onclick="DownloadResultAsync">Download Output File</button>
         <button @onclick="ClearData">Clear</button>
     </div>
-    @* <div style="margin-bottom: 1.5rem;">
-        <button @onclick="DownloadResultAsync">Download Output File</button>
-    </div> *@
 
     <h4>Bank Statement Preview - First 3 Rows</h4>
 
@@ -111,79 +316,6 @@
     }
 
     <h4>Output Preview - First 3 Rows</h4>
-
-    @* @if (_result.OutputPreview.Any())
-    {
-        <div style="overflow-x:auto; margin-bottom: 1.5rem;">
-            <table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
-                <thead>
-                    <tr>
-                        <th>TXdate</th>
-                        <th>Description</th>
-                        <th>Reference</th>
-                        <th>Amount</th>
-                        <th>UseTax</th>
-                        <th>TaxType</th>
-                        <th>TaxAccount</th>
-                        <th>TaxAmount</th>
-                        <th>Project</th>
-                        <th>Account</th>
-                        <th>IsDebit</th>
-                        <th>SplitType</th>
-                        <th>SplitGroup</th>
-                        <th>Reconcile</th>
-                        <th>PostDated</th>
-                        <th>UseDiscount</th>
-                        <th>DiscPerc</th>
-                        <th>DiscTrCode</th>
-                        <th>DiscDesc</th>
-                        <th>UseDiscTax</th>
-                        <th>DiscTaxType</th>
-                        <th>DiscTaxAcc</th>
-                        <th>DiscTaxAmt</th>
-                        <th>PayeeName</th>
-                        <th>PrintCheque</th>
-                        <th>SalesRep</th>
-                        <th>Module</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _result.OutputPreview)
-                    {
-                        <tr>
-                            <td>@row.TXdate</td>
-                            <td>@row.Description</td>
-                            <td>@row.Reference</td>
-                            <td>@row.Amount</td>
-                            <td>@row.UseTax</td>
-                            <td>@row.TaxType</td>
-                            <td>@row.TaxAccount</td>
-                            <td>@row.TaxAmount</td>
-                            <td>@row.Project</td>
-                            <td>@row.Account</td>
-                            <td>@row.IsDebit</td>
-                            <td>@row.SplitType</td>
-                            <td>@row.SplitGroup</td>
-                            <td>@row.Reconcile</td>
-                            <td>@row.PostDated</td>
-                            <td>@row.UseDiscount</td>
-                            <td>@row.DiscPerc</td>
-                            <td>@row.DiscTrCode</td>
-                            <td>@row.DiscDesc</td>
-                            <td>@row.UseDiscTax</td>
-                            <td>@row.DiscTaxType</td>
-                            <td>@row.DiscTaxAcc</td>
-                            <td>@row.DiscTaxAmt</td>
-                            <td>@row.PayeeName</td>
-                            <td>@row.PrintCheque</td>
-                            <td>@row.SalesRep</td>
-                            <td>@row.Module</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    } *@
 
     @if (_result.OutputPreview.Any())
     {

@@ -15,14 +15,6 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<IFileProccessorService, FileProccessorService>();
 builder.Services.AddScoped<IBankStatementService, BankStatementService>();
 
-//builder.Services
-//    .AddBlazorise(options =>
-//    {
-//        options.Immediate = true;
-//    })
-//    .AddBootstrapProviders() // This registers the IClassProvider implementation
-//    .AddFontAwesomeIcons();
-
 builder.Services.AddControllers();
 
 var app = builder.Build();
